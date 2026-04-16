@@ -13,18 +13,31 @@ CRITERIA_PROPERTIES = frozenset(
     }
 )
 
+XML_TO_YAML = {
+    "shouldArchive": "archive",
+    "shouldMarkAsRead": "markRead",
+    "shouldStar": "star",
+    "shouldTrash": "trash",
+    "shouldNeverSpam": "neverSpam",
+    "shouldAlwaysMarkAsImportant": "important",
+    "shouldNeverMarkAsImportant": "notImportant",
+    "smartLabelToApply": "smartLabel",
+}
+
+YAML_TO_XML = {v: k for k, v in XML_TO_YAML.items()}
+
 ACTION_PROPERTIES = frozenset(
     {
-        "shouldArchive",
-        "shouldMarkAsRead",
-        "shouldStar",
+        "archive",
+        "markRead",
+        "star",
         "label",
         "forwardTo",
-        "shouldTrash",
-        "shouldNeverSpam",
-        "shouldAlwaysMarkAsImportant",
-        "shouldNeverMarkAsImportant",
-        "smartLabelToApply",
+        "trash",
+        "neverSpam",
+        "important",
+        "notImportant",
+        "smartLabel",
     }
 )
 

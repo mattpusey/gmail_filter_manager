@@ -9,7 +9,7 @@ from collections import Counter
 import ruamel.yaml
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
-from .constants import ACTION_PROPERTIES, generate_action_set_name
+from .constants import ACTION_PROPERTIES, XML_TO_YAML, generate_action_set_name
 
 
 def extract_named_actions(filters):
@@ -82,7 +82,7 @@ def gfm_extract(argv=None):
     for e in root.findall("./atom:entry", namespaces):
         properties = {}
         for p in e.findall("./apps:property", namespaces):
-            name = p.get("name")
+            name = XML_TO_YAML.get(p.get("name"), p.get("name"))
             value = p.get("value")
             properties[name] = DoubleQuotedScalarString(value)
         if "size" not in properties:

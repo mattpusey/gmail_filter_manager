@@ -11,17 +11,10 @@ from gmail_filter_manager.gfm_make import gfm_make
 # --- Unit tests for extract_named_actions ---
 
 
-def _dqs(s):
-    """Shortcut to create DoubleQuotedScalarString."""
-    from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-
-    return DoubleQuotedScalarString(s)
-
-
 def test_no_duplicates_returns_unchanged():
     filters = [
-        {"from": "a@example.com", "shouldTrash": "true"},
-        {"from": "b@example.com", "shouldStar": "true"},
+        {"from": "a@example.com", "trash": "true"},
+        {"from": "b@example.com", "star": "true"},
     ]
     result = extract_named_actions(filters)
     assert result == filters
@@ -29,21 +22,21 @@ def test_no_duplicates_returns_unchanged():
 
 def test_duplicates_are_factored_out():
     filters = [
-        {"from": "a@example.com", "shouldTrash": "true", "label": "junk"},
-        {"from": "b@example.com", "shouldTrash": "true", "label": "junk"},
-        {"from": "c@example.com", "shouldStar": "true"},
+        {"from": "a@example.com", "trash": "true", "label": "junk"},
+        {"from": "b@example.com", "trash": "true", "label": "junk"},
+        {"from": "c@example.com", "star": "true"},
     ]
     result = extract_named_actions(filters)
 
     # First entry should be the named action set
     assert "name" in result[0]
-    assert result[0]["shouldTrash"] == "true"
+    assert result[0]["trash"] == "true"
     assert result[0]["label"] == "junk"
 
     # Next two should reference it
     assert result[1]["from"] == "a@example.com"
     assert result[1]["action"] == result[0]["name"]
-    assert "shouldTrash" not in result[1]
+    assert "trash" not in result[1]
     assert "label" not in result[1]
 
     assert result[2]["from"] == "b@example.com"
@@ -51,16 +44,16 @@ def test_duplicates_are_factored_out():
 
     # Last should be unchanged
     assert result[3]["from"] == "c@example.com"
-    assert result[3]["shouldStar"] == "true"
+    assert result[3]["star"] == "true"
     assert "action" not in result[3]
 
 
 def test_multiple_different_duplicates():
     filters = [
-        {"from": "a@example.com", "shouldTrash": "true"},
-        {"from": "b@example.com", "shouldTrash": "true"},
-        {"from": "c@example.com", "shouldStar": "true"},
-        {"from": "d@example.com", "shouldStar": "true"},
+        {"from": "a@example.com", "trash": "true"},
+        {"from": "b@example.com", "trash": "true"},
+        {"from": "c@example.com", "star": "true"},
+        {"from": "d@example.com", "star": "true"},
     ]
     result = extract_named_actions(filters)
 
@@ -85,29 +78,29 @@ def test_empty_actions_not_deduplicated():
 
 def test_name_generation_two_keys():
     name = generate_action_set_name(
-        {"label": "x", "shouldTrash": "true"}, set()
+        {"label": "x", "trash": "true"}, set()
     )
-    assert name == "x_and_shouldTrash"
+    assert name == "x_and_trash"
 
 
 def test_name_generation_three_keys():
     name = generate_action_set_name(
-        {"label": "x", "shouldTrash": "true", "shouldStar": "true"}, set()
+        {"label": "x", "trash": "true", "star": "true"}, set()
     )
     assert name == "x_plus_2"
 
 
 def test_name_generation_collision():
-    existing = {"x_and_shouldTrash"}
+    existing = {"x_and_trash"}
     name = generate_action_set_name(
-        {"label": "x", "shouldTrash": "true"}, existing
+        {"label": "x", "trash": "true"}, existing
     )
-    assert name == "x_and_shouldTrash_2"
+    assert name == "x_and_trash_2"
 
 
 def test_name_generation_single_key():
-    name = generate_action_set_name({"shouldTrash": "true"}, set())
-    assert name == "shouldTrash"
+    name = generate_action_set_name({"trash": "true"}, set())
+    assert name == "trash"
 
 
 # --- Integration tests: gfm_make with named actions ---
@@ -133,7 +126,7 @@ def _read_xml(path):
 def test_gfm_make_expands_named_actions():
     data = {
         "filters": [
-            {"name": "junk", "label": "junk", "shouldTrash": "true"},
+            {"name": "junk", "label": "junk", "trash": "true"},
             {"from": "a@example.com", "action": "junk"},
             {"from": "b@example.com", "action": "junk"},
         ]
@@ -148,7 +141,7 @@ def test_gfm_make_expands_named_actions():
         # Should have 2 entries (named action set is not emitted)
         assert xml_content.count("<entry>") == 2
 
-        # Both entries should have the expanded actions
+        # Both entries should have the expanded XML actions
         assert xml_content.count('name="shouldTrash"') == 2
         assert xml_content.count('name="label" value="junk"') == 2
 
@@ -156,7 +149,7 @@ def test_gfm_make_expands_named_actions():
         assert 'value="a@example.com"' in xml_content
         assert 'value="b@example.com"' in xml_content
 
-        # action itself should NOT appear as a property
+        # action/name metadata should NOT appear as a property
         assert 'name="action"' not in xml_content
         assert 'name="name"' not in xml_content
     finally:
@@ -164,8 +157,44 @@ def test_gfm_make_expands_named_actions():
         os.unlink(xml_path)
 
 
+def test_gfm_make_expands_short_names_to_xml():
+    """Short YAML names are expanded to long XML names."""
+    data = {
+        "filters": [
+            {
+                "from": "a@example.com",
+                "archive": "true",
+                "markRead": "true",
+                "star": "true",
+                "trash": "true",
+                "neverSpam": "true",
+                "important": "true",
+                "notImportant": "true",
+                "smartLabel": "^smartlabel_personal",
+            },
+        ]
+    }
+    yaml_path = _make_yaml_file(data)
+    fd, xml_path = tempfile.mkstemp(suffix=".xml")
+    os.close(fd)
+    try:
+        gfm_make([yaml_path, xml_path])
+        xml_content = _read_xml(xml_path)
+        assert 'name="shouldArchive"' in xml_content
+        assert 'name="shouldMarkAsRead"' in xml_content
+        assert 'name="shouldStar"' in xml_content
+        assert 'name="shouldTrash"' in xml_content
+        assert 'name="shouldNeverSpam"' in xml_content
+        assert 'name="shouldAlwaysMarkAsImportant"' in xml_content
+        assert 'name="shouldNeverMarkAsImportant"' in xml_content
+        assert 'name="smartLabelToApply"' in xml_content
+    finally:
+        os.unlink(yaml_path)
+        os.unlink(xml_path)
+
+
 def test_gfm_make_backward_compat():
-    """YAML without named actions works as before."""
+    """YAML with old long names still produces correct XML."""
     data = {
         "filters": [
             {"from": "a@example.com", "shouldTrash": "true"},
@@ -205,11 +234,11 @@ def test_gfm_make_unknown_action_raises():
 def test_gfm_make_mixed_action_raises():
     data = {
         "filters": [
-            {"name": "junk", "shouldTrash": "true"},
+            {"name": "junk", "trash": "true"},
             {
                 "from": "a@example.com",
                 "action": "junk",
-                "shouldStar": "true",
+                "star": "true",
             },
         ]
     }
@@ -288,11 +317,12 @@ def test_gfm_extract_deduplicates():
 
         filters = data["filters"]
 
-        # First entry should be the named action set
+        # First entry should be the named action set with short names
         named = [f for f in filters if "name" in f]
         assert len(named) == 1
-        assert named[0]["shouldTrash"] == "true"
+        assert named[0]["trash"] == "true"
         assert named[0]["label"] == "junk"
+        assert "shouldTrash" not in named[0]
 
         # Two filters should reference it
         refs = [f for f in filters if "action" in f]
@@ -301,13 +331,65 @@ def test_gfm_extract_deduplicates():
         assert refs[0]["from"] == "a@example.com"
         assert refs[1]["from"] == "b@example.com"
 
-        # One filter should have inline actions
+        # One filter should have inline short-named actions
         inline = [
             f for f in filters if "name" not in f and "action" not in f
         ]
         assert len(inline) == 1
         assert inline[0]["from"] == "c@example.com"
-        assert inline[0]["shouldStar"] == "true"
+        assert inline[0]["star"] == "true"
+        assert "shouldStar" not in inline[0]
+    finally:
+        os.unlink(xml_path)
+        os.unlink(yaml_path)
+
+
+def test_gfm_extract_condenses_names():
+    """XML long names are condensed to short YAML names."""
+    xml_content = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom'
+      xmlns:apps='http://schemas.google.com/apps/2006'>
+  <entry>
+    <apps:property name='from' value='a@example.com'/>
+    <apps:property name='shouldArchive' value='true'/>
+    <apps:property name='shouldMarkAsRead' value='true'/>
+    <apps:property name='shouldStar' value='true'/>
+    <apps:property name='shouldTrash' value='true'/>
+    <apps:property name='shouldNeverSpam' value='true'/>
+    <apps:property name='shouldAlwaysMarkAsImportant' value='true'/>
+    <apps:property name='shouldNeverMarkAsImportant' value='true'/>
+    <apps:property name='smartLabelToApply' value='^smartlabel_personal'/>
+  </entry>
+</feed>
+"""
+    fd_xml, xml_path = tempfile.mkstemp(suffix=".xml")
+    os.close(fd_xml)
+    fd_yaml, yaml_path = tempfile.mkstemp(suffix=".yaml")
+    os.close(fd_yaml)
+    try:
+        with open(xml_path, "w") as f:
+            f.write(xml_content)
+
+        gfm_extract([xml_path, yaml_path])
+
+        yaml = ruamel.yaml.YAML()
+        with open(yaml_path) as f:
+            data = yaml.load(f)
+
+        f = data["filters"][0]
+        assert f["archive"] == "true"
+        assert f["markRead"] == "true"
+        assert f["star"] == "true"
+        assert f["trash"] == "true"
+        assert f["neverSpam"] == "true"
+        assert f["important"] == "true"
+        assert f["notImportant"] == "true"
+        assert f["smartLabel"] == "^smartlabel_personal"
+        # Long names should not be present
+        assert "shouldArchive" not in f
+        assert "shouldTrash" not in f
+        assert "smartLabelToApply" not in f
     finally:
         os.unlink(xml_path)
         os.unlink(yaml_path)
@@ -378,7 +460,7 @@ def test_round_trip():
         # Should have 3 entries (named action expanded back)
         assert xml_output.count("<entry>") == 3
 
-        # All original data should be present
+        # All original data should be present with long XML names
         assert 'value="a@example.com"' in xml_output
         assert 'value="b@example.com"' in xml_output
         assert 'value="c@example.com"' in xml_output
@@ -386,9 +468,11 @@ def test_round_trip():
         assert xml_output.count('name="label" value="junk"') == 2
         assert xml_output.count('name="shouldStar" value="true"') == 1
 
-        # No named action metadata in XML
+        # No named action metadata or short names in XML
         assert 'name="action"' not in xml_output
         assert 'name="name"' not in xml_output
+        assert 'name="trash"' not in xml_output
+        assert 'name="star"' not in xml_output
     finally:
         os.unlink(xml_path)
         os.unlink(yaml_path)

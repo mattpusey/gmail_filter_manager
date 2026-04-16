@@ -109,18 +109,22 @@ Please check following help for more details:
 
 ### Filter Action Properties
 
-| Name                        | XML attribute                      | Description                                                                                                                                         |
-| :-------------------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Skip the Inbox (Archive it) | name="shouldArchive"               |                                                                                                                                                     |
-| Mark as read                | name="shouldMarkAsRead"            |                                                                                                                                                     |
-| Star it                     | name="shouldStar"                  |                                                                                                                                                     |
-| Apply the label             | name="label"                       |                                                                                                                                                     |
-| Forward it to               | name="forwrdTo"                    |                                                                                                                                                     |
-| Delete it                   | name="shouldTrash"                 |                                                                                                                                                     |
-| Never send it to Spam       | name="shouldNeverSpam"             |                                                                                                                                                     |
-| Always mark it as important | name="shouldAlwaysMarkAsImportant" |                                                                                                                                                     |
-| Never mark it as important  | name="should                       |                                                                                                                                                     |
-| Categorize as               | name="smartLabelToApply"           | Add smart label. value can be "^smartlabel_personal", "^smartlabel_social", "^smartlabel_promo", "^smartlabel_group" or "^smartlabel_notification". |
+| Name                        | YAML key       | XML attribute                      | Description                                                                                                                                         |
+| :-------------------------- | :------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skip the Inbox (Archive it) | archive        | name="shouldArchive"               |                                                                                                                                                     |
+| Mark as read                | markRead       | name="shouldMarkAsRead"            |                                                                                                                                                     |
+| Star it                     | star           | name="shouldStar"                  |                                                                                                                                                     |
+| Apply the label             | label          | name="label"                       |                                                                                                                                                     |
+| Forward it to               | forwardTo      | name="forwardTo"                   |                                                                                                                                                     |
+| Delete it                   | trash          | name="shouldTrash"                 |                                                                                                                                                     |
+| Never send it to Spam       | neverSpam      | name="shouldNeverSpam"             |                                                                                                                                                     |
+| Always mark it as important | important      | name="shouldAlwaysMarkAsImportant" |                                                                                                                                                     |
+| Never mark it as important  | notImportant   | name="shouldNeverMarkAsImportant"  |                                                                                                                                                     |
+| Categorize as               | smartLabel     | name="smartLabelToApply"           | Add smart label. value can be "^smartlabel_personal", "^smartlabel_social", "^smartlabel_promo", "^smartlabel_group" or "^smartlabel_notification". |
+
+`gfm_extract` automatically converts long XML attribute names to the short YAML
+keys shown above. `gfm_make` expands them back to XML names when generating
+output. Old YAML files using the long XML names are still accepted by `gfm_make`.
 
 Tips:
 

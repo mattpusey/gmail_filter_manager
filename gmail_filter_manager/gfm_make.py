@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 import ruamel.yaml
 
-from .constants import ACTION_PROPERTIES
+from .constants import ACTION_PROPERTIES, YAML_TO_XML
 
 
 def gfm_make(argv=None):
@@ -87,10 +87,11 @@ def gfm_make(argv=None):
             if label is not None:
                 properties["label"] = label
             for k, v in properties.items():
+                xml_name = YAML_TO_XML.get(k, k)
                 ET.SubElement(
                     entry,
                     "{" + namespaces["apps"] + "}property",
-                    attrib={"name": k, "value": v},
+                    attrib={"name": xml_name, "value": v},
                 )
 
     my_filter = xml.dom.minidom.parseString(ET.tostring(root)).toprettyxml(
