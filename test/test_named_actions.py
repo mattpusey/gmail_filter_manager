@@ -50,10 +50,10 @@ def test_duplicates_are_factored_out():
 
 def test_multiple_different_duplicates():
     filters = [
-        {"from": "a@example.com", "trash": "true"},
-        {"from": "b@example.com", "trash": "true"},
-        {"from": "c@example.com", "star": "true"},
-        {"from": "d@example.com", "star": "true"},
+        {"from": "a@example.com", "trash": "true", "notImportant": "true"},
+        {"from": "b@example.com", "trash": "true", "notImportant": "true"},
+        {"from": "c@example.com", "star": "true", "markRead": "true"},
+        {"from": "d@example.com", "star": "true", "markRead": "true"},
     ]
     result = extract_named_actions(filters)
 
@@ -71,6 +71,17 @@ def test_empty_actions_not_deduplicated():
     result = extract_named_actions(filters)
     assert len(result) == 2
     assert all("name" not in f for f in result)
+
+
+def test_single_action_duplicates_not_extracted():
+    filters = [
+        {"from": "a@example.com", "trash": "true"},
+        {"from": "b@example.com", "trash": "true"},
+    ]
+    result = extract_named_actions(filters)
+    assert len(result) == 2
+    assert all("name" not in f for f in result)
+    assert all("action" not in f for f in result)
 
 
 # --- Unit tests for generate_action_set_name ---

@@ -29,7 +29,7 @@ def extract_named_actions(filters):
     existing_names = set()
     key_to_name = {}
     for action_key, count in action_counts.items():
-        if count >= 2:
+        if count >= 2 and len(action_key) >= 2:
             actions_dict = dict(action_key)
             name = generate_action_set_name(actions_dict, existing_names)
             existing_names.add(name)
