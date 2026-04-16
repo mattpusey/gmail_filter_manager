@@ -167,7 +167,7 @@ def test_gfm_make_expands_short_names_to_xml():
                 "markRead": "true",
                 "star": "true",
                 "trash": "true",
-                "neverSpam": "true",
+                "notSpam": "true",
                 "important": "true",
                 "notImportant": "true",
                 "smartLabel": "^smartlabel_personal",
@@ -382,7 +382,7 @@ def test_gfm_extract_condenses_names():
         assert f["markRead"] == "true"
         assert f["star"] == "true"
         assert f["trash"] == "true"
-        assert f["neverSpam"] == "true"
+        assert f["notSpam"] == "true"
         assert f["important"] == "true"
         assert f["notImportant"] == "true"
         assert f["smartLabel"] == "^smartlabel_personal"
