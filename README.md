@@ -126,6 +126,38 @@ Tips:
 
 You can use array for **label** to set several labels on the same criteria.
 
+### Named Action Sets
+
+If multiple filters share the same set of actions, you can define a
+**named action set** and reference it by name. A named action set is a
+special entry in the filters list that has a **name** key instead of
+criteria:
+
+```yaml
+filters:
+- name: "pointless"
+  label: "pointless"
+  shouldNeverMarkAsImportant: "true"
+- from: "foo@example.com"
+  action: "pointless"
+- from: "bar@example.com"
+  action: "pointless"
+- from: "baz@example.com"
+  label: "important"
+```
+
+Rules:
+
+- A filter with **action** must not also have explicit action properties.
+- Named action set entries (with **name**) are skipped during XML generation.
+- `gfm_make` inlines the named actions back into concrete properties for each
+  referencing filter.
+- `gfm_extract` automatically detects duplicate action sets across filters and
+  creates named action set entries for them.
+
+To turn an existing filter into a named action set, add a **name** key and
+remove the criteria properties.
+
 ## How to export/import filters
 
 Check **Export or import filters** in the official help:
