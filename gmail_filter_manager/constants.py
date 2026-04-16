@@ -31,12 +31,18 @@ ACTION_PROPERTIES = frozenset(
 
 def generate_action_set_name(actions_dict, existing_names):
     """Generate a human-readable name for a set of actions."""
-    keys = sorted(actions_dict.keys())
+    label_value = actions_dict.get("label")
+    other_keys = sorted(k for k in actions_dict if k != "label")
 
-    if len(keys) <= 2:
-        base = "_and_".join(keys)
+    if label_value is not None:
+        parts = [label_value] + other_keys
     else:
-        base = f"{keys[0]}_plus_{len(keys) - 1}"
+        parts = other_keys
+
+    if len(parts) <= 2:
+        base = "_and_".join(parts)
+    else:
+        base = f"{parts[0]}_plus_{len(parts) - 1}"
 
     name = base
     counter = 2

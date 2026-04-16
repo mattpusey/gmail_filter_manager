@@ -87,22 +87,22 @@ def test_name_generation_two_keys():
     name = generate_action_set_name(
         {"label": "x", "shouldTrash": "true"}, set()
     )
-    assert name == "label_and_shouldTrash"
+    assert name == "x_and_shouldTrash"
 
 
 def test_name_generation_three_keys():
     name = generate_action_set_name(
         {"label": "x", "shouldTrash": "true", "shouldStar": "true"}, set()
     )
-    assert name == "label_plus_2"
+    assert name == "x_plus_2"
 
 
 def test_name_generation_collision():
-    existing = {"label_and_shouldTrash"}
+    existing = {"x_and_shouldTrash"}
     name = generate_action_set_name(
         {"label": "x", "shouldTrash": "true"}, existing
     )
-    assert name == "label_and_shouldTrash_2"
+    assert name == "x_and_shouldTrash_2"
 
 
 def test_name_generation_single_key():
