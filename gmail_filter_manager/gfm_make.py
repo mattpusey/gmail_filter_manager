@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ET
 
 import ruamel.yaml
 
+from .constants import ACTION_PROPERTIES, YAML_TO_XML
+
 
 def gfm_make(argv=None):
     if argv is None:
@@ -37,8 +39,41 @@ def gfm_make(argv=None):
     for k, v in namespaces.items():
         ET.register_namespace(k, v)
 
-    root = ET.Element("feed")
+    named_actions = {}
+    filters = []
     for f in data["filters"]:
+        f = dict(f)
+        if "name" in f:
+            name = f.pop("name")
+            named_actions[name] = f
+        else:
+            filters.append(f)
+
+    for f in filters:
+        if "action" in f:
+            action_name = f["action"]
+            if action_name not in named_actions:
+                raise ValueError(
+                    f"Filter references unknown named action:"
+                    f" '{action_name}'."
+                    f" Available: {list(named_actions.keys())}"
+                )
+            explicit_actions = {
+                k for k in f if k != "action" and k in ACTION_PROPERTIES
+            }
+            if explicit_actions:
+                raise ValueError(
+                    f"Filter with action '{action_name}' also has"
+                    f" explicit action properties:"
+                    f" {sorted(explicit_actions)}."
+                    f" A filter must use either 'action' or"
+                    f" explicit actions, not both."
+                )
+            del f["action"]
+            f.update(named_actions[action_name])
+
+    root = ET.Element("feed")
+    for f in filters:
         if "label" in f:
             labels = (
                 f["label"] if isinstance(f["label"], list) else [f["label"]]
@@ -52,10 +87,11 @@ def gfm_make(argv=None):
             if label is not None:
                 properties["label"] = label
             for k, v in properties.items():
+                xml_name = YAML_TO_XML.get(k, k)
                 ET.SubElement(
                     entry,
                     "{" + namespaces["apps"] + "}property",
-                    attrib={"name": k, "value": v},
+                    attrib={"name": xml_name, "value": v},
                 )
 
     my_filter = xml.dom.minidom.parseString(ET.tostring(root)).toprettyxml(

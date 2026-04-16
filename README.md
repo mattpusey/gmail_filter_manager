@@ -109,22 +109,58 @@ Please check following help for more details:
 
 ### Filter Action Properties
 
-| Name                        | XML attribute                      | Description                                                                                                                                         |
-| :-------------------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Skip the Inbox (Archive it) | name="shouldArchive"               |                                                                                                                                                     |
-| Mark as read                | name="shouldMarkAsRead"            |                                                                                                                                                     |
-| Star it                     | name="shouldStar"                  |                                                                                                                                                     |
-| Apply the label             | name="label"                       |                                                                                                                                                     |
-| Forward it to               | name="forwrdTo"                    |                                                                                                                                                     |
-| Delete it                   | name="shouldTrash"                 |                                                                                                                                                     |
-| Never send it to Spam       | name="shouldNeverSpam"             |                                                                                                                                                     |
-| Always mark it as important | name="shouldAlwaysMarkAsImportant" |                                                                                                                                                     |
-| Never mark it as important  | name="should                       |                                                                                                                                                     |
-| Categorize as               | name="smartLabelToApply"           | Add smart label. value can be "^smartlabel_personal", "^smartlabel_social", "^smartlabel_promo", "^smartlabel_group" or "^smartlabel_notification". |
+| Name                        | YAML key       | XML attribute                      | Description                                                                                                                                         |
+| :-------------------------- | :------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skip the Inbox (Archive it) | archive        | name="shouldArchive"               |                                                                                                                                                     |
+| Mark as read                | markRead       | name="shouldMarkAsRead"            |                                                                                                                                                     |
+| Star it                     | star           | name="shouldStar"                  |                                                                                                                                                     |
+| Apply the label             | label          | name="label"                       |                                                                                                                                                     |
+| Forward it to               | forwardTo      | name="forwardTo"                   |                                                                                                                                                     |
+| Delete it                   | trash          | name="shouldTrash"                 |                                                                                                                                                     |
+| Never send it to Spam       | notSpam        | name="shouldNeverSpam"             |                                                                                                                                                     |
+| Always mark it as important | important      | name="shouldAlwaysMarkAsImportant" |                                                                                                                                                     |
+| Never mark it as important  | notImportant   | name="shouldNeverMarkAsImportant"  |                                                                                                                                                     |
+| Categorize as               | smartLabel     | name="smartLabelToApply"           | Add smart label. value can be "^smartlabel_personal", "^smartlabel_social", "^smartlabel_promo", "^smartlabel_group" or "^smartlabel_notification". |
+
+`gfm_extract` automatically converts long XML attribute names to the short YAML
+keys shown above. `gfm_make` expands them back to XML names when generating
+output. Old YAML files using the long XML names are still accepted by `gfm_make`.
 
 Tips:
 
 You can use array for **label** to set several labels on the same criteria.
+
+### Named Action Sets
+
+If multiple filters share the same set of actions, you can define a
+**named action set** and reference it by name. A named action set is a
+special entry in the filters list that has a **name** key instead of
+criteria:
+
+```yaml
+filters:
+- name: "pointless"
+  label: "pointless"
+  shouldNeverMarkAsImportant: "true"
+- from: "foo@example.com"
+  action: "pointless"
+- from: "bar@example.com"
+  action: "pointless"
+- from: "baz@example.com"
+  label: "important"
+```
+
+Rules:
+
+- A filter with **action** must not also have explicit action properties.
+- Named action set entries (with **name**) are skipped during XML generation.
+- `gfm_make` inlines the named actions back into concrete properties for each
+  referencing filter.
+- `gfm_extract` automatically detects duplicate action sets across filters and
+  creates named action set entries for them.
+
+To turn an existing filter into a named action set, add a **name** key and
+remove the criteria properties.
 
 ## How to export/import filters
 
